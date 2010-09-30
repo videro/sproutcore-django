@@ -194,8 +194,10 @@ Django.DataSource = SC.DataSource.extend({
         record;
 
     if (SC.$ok(response)) {
-      record = response.fields;
-      record.pk = response.pk;
+      //this seems to be useless, since the record is already destroyed. also,
+      //the response seems to be always empty
+      //record = response.fields;
+      //record.pk = response.pk;
 
       console.log('dataSourceDidDestroy');
       store.dataSourceDidDestroy(storeKey);
