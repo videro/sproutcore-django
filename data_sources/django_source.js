@@ -108,8 +108,8 @@ Django.DataSource = SC.DataSource.extend({
         appName         = recordTypePath[0],
         modelName       = recordTypePath[1];
     //if the id is int instead of object, fmt(%@ won't work. thus we have to convert the object-type
-    if(SC.typeOf(id)!='object')id=""+id;
-    var url = Django.getURL.fmt(Django.urlPrefix, appName, modelName, id);
+    if(SC.typeOf(recordId)!='object')id=""+recordId;
+    var url = Django.getURL.fmt(Django.urlPrefix, appName, modelName, recordId);
 
     SC.Request.getUrl(url).set('isJSON', YES)
       .notify(this, this._didRetrieveRecord, {
