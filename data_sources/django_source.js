@@ -186,7 +186,7 @@ Django.DataSource = SC.DataSource.extend({
         appName = recordTypePath[0],
         modelName = recordTypePath[1];
     var url = Django.deleteURL.fmt(Django.urlPrefix, appName, modelName, recordId);
-
+    console.log('desctroy'+url)
     SC.Request.deleteUrl(url).set('isJSON', YES)
       .notify(this, this._didDestroyRecord, {
         store: store,
