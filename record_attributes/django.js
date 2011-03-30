@@ -61,7 +61,7 @@ SC.RecordAttribute.registerTransform(Django.DateField, {
 
   /** @private - convert a string to a Date */
   to: function(str, attr) {
-    var ret ;
+   /* var ret ;
     
     var regexp = "([0-9]{4})(-([0-9]{2})(-([0-9]{2})" +
            " (([0-9]{2}):([0-9]{2})(:([0-9]{2})(\\.([0-9]+))?)?" +
@@ -70,7 +70,7 @@ SC.RecordAttribute.registerTransform(Django.DateField, {
         offset = 0,
         date   = new Date(d[1], 0, 1),
         time ;
-        
+     
     if (d[3]) { date.setMonth(d[3] - 1); }
     if (d[5]) { date.setDate(d[5]); }
     if (d[7]) { date.setHours(d[7]); }
@@ -88,14 +88,45 @@ SC.RecordAttribute.registerTransform(Django.DateField, {
     ret = new Date();
     ret.setTime(Number(time));
     
+    return ret ;*/
+
+    var ret ;
+    
+    var regexp = "([0-9]{4})-([0-9]{2})-([0-9]{2})?",
+        d      = str.match(new RegExp(regexp)),
+        offset = 0,
+        time ;
+    var date = SC.DateTime.create({});
+    date = SC.DateTime.create({year:d[1], month:d[2], day:d[3]});
+
+    /*if (d[3]) { date.setMonth(d[3] - 1); }
+    if (d[5]) { date.setDate(d[5]); }
+    if (d[7]) { date.setHours(d[7]); }
+    if (d[8]) { date.setMinutes(d[8]); }
+    if (d[10]) { date.setSeconds(d[10]); }
+    if (d[12]) { date.setMilliseconds(Number("0." + d[12]) * 1000); }
+    if (d[14]) {
+       offset = (Number(d[16]) * 60) + Number(d[17]);
+       offset *= ((d[15] == '-') ? 1 : -1);
+    }
+    
+    offset -= date.getTimezoneOffset();
+    time = (Number(date) + (offset * 60 * 1000));
+    
+    ret = new Date();
+    ret.setTime(Number(time));*/
+    ret = date;
     return ret ;
   },
   
   _dates: {},
+  _zeropad: function(num) { 
+    return ((num<0) ? '-' : '') + ((num<10) ? '0' : '') + Math.abs(num); 
+  },
   
   /** @private - convert a date to a string */
   from: function(date) { 
-    var ret = this._dates[date.getTime()];
+    /*var ret = this._dates[date.getTime()];
     if (ret) return ret ; 
     
     this._dates[date.getTime()] = ret = "%@-%@-%@".fmt(
@@ -104,6 +135,19 @@ SC.RecordAttribute.registerTransform(Django.DateField, {
       zp(date.getDate())
     ) ;
     
+    return ret ;*/
+    var ret = this._dates[date.get('milliseconds')];
+    if (ret) return ret ; 
+    
+    // figure timezone
+    var zp = this._zeropad;
+        tz = 0-date.get('timezome')/60;
+    
+    tz = '';//(tz === 0) ? 'Z' : '%@:00'.fmt(zp(tz));
+    this._dates[date.get('milliseconds')] = ret = "%@-%@-%@".fmt(
+      zp(date.toFormattedString('%Y')),
+      zp(date.toFormattedString('%m')),
+      zp(date.toFormattedString('%d'))) ;
     return ret ;
   }
 });
@@ -160,7 +204,7 @@ SC.RecordAttribute.registerTransform(Django.DateTimeField, {
       if (d[2]) { date.set('month',d[2] - 1); }
       if (d[3]) { date.set('day',d[3]); }
       
-      date = SC.DateTime.create({year:d[1], month:d[2], day:d[3]});
+      date = SC.DateTime.create({year:d[1], month:d[2], day:d[3], hour: d[4], minute:d[5], second:d[6]});
       if (d[4]) { date.set('hour', d[4]); }
       if (d[5]) { date.set('minute', d[5]); }
       if (d[6]) { date.set('sec', d[6]); }
@@ -225,14 +269,13 @@ SC.RecordAttribute.registerTransform(Django.DateTimeField, {
         tz = 0-date.get('timezome')/60;
     
     tz = '';//(tz === 0) ? 'Z' : '%@:00'.fmt(zp(tz));
-    this._dates[date.get('milliseconds')] = ret = "%@-%@-%@ %@:%@:%@%@".fmt(
-      zp(date.get('year')),
-      zp(date.get('month')),
-      zp(date.get('day')),
-      zp(date.get('hour')),
-      zp(date.get('minute')),
-      zp(date.get('sec')),
-      tz) ;
+    this._dates[date.get('milliseconds')] = ret = "%@-%@-%@ %@:%@:%@".fmt(
+      zp(date.toFormattedString('%Y')),
+      zp(date.toFormattedString('%m')),
+      zp(date.toFormattedString('%d')),
+      zp(date.toFormattedString('%H')),
+      zp(date.toFormattedString('%M')),
+      zp(date.toFormattedString('%S'))) ;
     return ret ;
   }
 });
@@ -241,20 +284,100 @@ SC.RecordAttribute.registerTransform(Django.DateTimeField, {
 SC.RecordAttribute.registerTransform(Django.DecimalField, {
   
   /** @private - convert a Number to a Decimal */
-  from: function(str) {
+  from: function(str, attr) {
     // Check the String!!
-    str = String(str);
-    str = str.replace(',','.');
-    var str = parseFloat(str);
+    var decimalPlaces = 2;
+    try
+    {
+      if (attr.get('decimalPlaces'))
+      {
+        decimalPlaces = attr.get('decimalPlaces');    
+      }
+    }
+    catch (e)
+    {
+      
+    }
+    num = String(str);
 
-    return String(str);
+    // Cut to decimalPlaces
+    var index = num.indexOf('.');
+    if (index != -1 && index+decimalPlaces+1 <= num.length)
+    {
+      return num.substr(0,index+decimalPlaces+1);
+    }
+    return (num);
   },
 
   /** @private - convert a decimal field to a Number */
-  to: function(obj) {
-    
-    var num = String(obj);
-    return SC.none(obj) ? null : Number(obj) ;
+  to: function(obj, attr) {
+
+    var decimalPlaces = 2;
+    try
+    {
+      if (attr.get('decimalPlaces'))
+      {
+        decimalPlaces = attr.get('decimalPlaces');    
+      }
+    }
+    catch (e)
+    {
+      
+    }
+    //var num = parseFloat(obj);
+    var num=String(obj);
+
+    num = num.replace(',','.');
+    num = num.replace(' ','');
+    if (num.length > 0)
+    {
+
+      var newNum = '';
+      // eliminate all . except last
+      var dotFound = false;
+      for (var i = num.length -1 ; i>=0; i--)
+      {
+        if (num.charAt(i) == '.')
+        {
+          if (!dotFound)
+          {
+            newNum = num.charAt(i) + newNum;
+            dotFound= true;  
+          }
+        }
+        else
+        {
+          newNum = num.charAt(i) + newNum;
+        }
+      }
+      num = newNum;
+      var RegExp = /^(-)?(\d*)(\.?)(\d*)$/; // Note: this WILL allow a number that ends in a decimal: -452.
+      // compare the argument to the RegEx
+      // the 'match' function returns 0 if the value didn't match
+      var result = num.match(RegExp);
+      if (result)
+      {
+        if (result[0])
+        {
+          num=result[0];
+        }
+        else
+        {
+          num = '0.00';
+        }
+      }
+      else
+      {
+        num = '0.00';
+      }
+    }
+    // Cut to decimalPlaces
+    var index = num.indexOf('.');
+    if (index != -1 && index+decimalPlaces+1 <= num.length)
+    {
+      return num.substr(0,index+decimalPlaces+1);
+    }
+    return SC.none(num) ? '0.00' : num ;
   }
   
 });
@@ -466,7 +589,7 @@ SC.RecordAttribute.registerTransform(Django.TextField, {
 });
 
 /** @private */
-Django.TIME_FIELD_REGEXP = /([0-9]{2}):([0-9]{2}):([0-9]{2})/ ;
+Django.TIME_FIELD_REGEXP = /([0-9]{0,2}):([0-9]{0,2}):([0-9]{0,2})/ ;
 
 /** @private FIXME: How does Django pass times in JSON? */
 SC.RecordAttribute.registerTransform(Django.TimeField, {
@@ -486,19 +609,27 @@ SC.RecordAttribute.registerTransform(Django.TimeField, {
     return ret ;
     */
 
-
-    var ret ;
+    /*console.log('str');
+    console.log(str);
+    console.log('str-end');
+    */var ret ;
     
     var d      = str.match(Django.TIME_FIELD_REGEXP),
         offset = 0,
-        date   = null, //new Date(0, 0, 1),
+        date   = SC.DateTime.create({hour:0, minute:0, sec:0}), //new Date(0, 0, 1),
         time ;
-    date = SC.DateTime.create({hour: d[1], minute: d[2], sec: d[3]});
-
+    if (d)
+    {
+      date = SC.DateTime.create({hour: parseInt(d[1]), minute: parseInt(d[2]), sec: parseInt(d[3])});  
+    }
+    ret = date;
     return ret ;
   },
   
   _dates: {},
+  _zeropad: function(num) { 
+    return ((num<0) ? '-' : '') + ((num<10) ? '0' : '') + Math.abs(num); 
+  },
    
   /** @private - convert a date to a string */
   from: function(date) { 
@@ -512,15 +643,18 @@ SC.RecordAttribute.registerTransform(Django.TimeField, {
     );
     
     return ret ;*/
-    var ret = this._dates[date.get('usec')];
+    var ret = this._dates[date.get('milliseconds')];
     if (ret) return ret ; 
     
-    this._dates[date.get('usec')] = ret = "%@:%@:%@".fmt(
-      zp(date.get('hour')),
-      zp(date.get('minute')),
-      zp(date.get('sec'))
+    var zp = this._zeropad;
+
+    this._dates[date.get('milliseconds')] = ret = "%@:%@:%@".fmt(
+      (date.toFormattedString('%H')),
+      (date.toFormattedString('%M')),
+      (date.toFormattedString('%S'))
     );
-    
+    console.log('ret');
+    console.log(ret);
     return ret ;
 
   }

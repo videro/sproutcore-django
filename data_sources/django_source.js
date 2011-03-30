@@ -190,7 +190,18 @@ Django.DataSource = SC.DataSource.extend({
 
       console.log('dataSourceDidComplete');
       store.dataSourceDidComplete(storeKey, record);
+      if (this.callback)
+      {
+        try 
+        {
+          this.callback();
+        }
+        catch (e)
+        {
+          console.log(e);
+        }
 
+      }
     // error: indicate as such...response == error
     } else store.dataSourceDidError(storeKey, record);
   },
@@ -327,6 +338,10 @@ Django.DataSource = SC.DataSource.extend({
      *   + (String) REMOTE [R/W]
      *   - (SC.Query) scope [R/W]
      *   */
+
+     
+
+    console.log('queryCallback'+ query.callbackFunction);
     console.log("expandedRecordTypes: "+query.expandedRecordTypes());
     console.log("conditions: "+query.conditions);
     console.log("editable: "+query.isEditable);
@@ -425,7 +440,6 @@ Django.DataSource = SC.DataSource.extend({
         store.loadQueryResults(query, storeKeys);
       }
       store.dataSourceDidFetchQuery(query);
-			
 		}		
 		if (qParams && qParams.successCallback) 
 		{
@@ -448,7 +462,7 @@ Django.DataSource = SC.DataSource.extend({
   _loadRecords: function(store, query, json) {
 	var records = [] ;
 	console.log('_loadingRecords');
-	// bplutka: Fallunterscheidung, falls das Array nur 1 Element hat zieht forEach nicht!
+  // bplutka: Fallunterscheidung, falls das Array nur 1 Element hat zieht forEach nicht!
 	if (json.length==1)
 	{
 		var new_record = json[0].fields ;
