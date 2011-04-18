@@ -19,9 +19,10 @@ Django.getLengthURL = "/%@/%@/%@/length/" ;
  GET a couple of objects with query parameters / conditions and orderby 
  /<url_prefix>/<app_label>/<model_name>/list/?offset=0&limit=0&ordering=name&conditions=ipPublic%20%3D%20%7Bipp%7D%20AND%20ipUmts%20%3D%20%7Bipu%7D&name=jochen&nr=48455
  */
-//Django.getQueryURL = "/%@/%@/%@/list/?offset=%@&limit=%@&ordering=%@&conditions=%@&parameters=%@";
+Django.getQueryURL = "/%@/%@/%@/list/?offset=%@&limit=%@&ordering=%@&conditions=%@&parameters=%@";
 //Django.getQueryURL = "/%@/%@/%@/list/?offset=%@&limit=%@&ordering=%@%@";
-Django.getQueryURL = "/%@/%@/%@/list/?ordering=%@%@";
+//Django.getQueryURL = "/%@/%@/%@/list/?ordering=%@%@";
+Django.getSimpleQueryURL = "/%@/%@/%@/list/?offset=%@&limit=%@&ordering=%@";
 
 /**
   GET a range of objects based on a sort
@@ -185,12 +186,18 @@ Django.DataSource = SC.DataSource.extend({
         record;
     // normal: load into store...response == dataHash
     if (SC.$ok(response)) {
-      record = response.fields;
-      record.pk = response.pk;
+      try {
+        record = response.fields;
+        record.pk = response.pk;
 
-      console.log('dataSourceDidComplete');
-      store.dataSourceDidComplete(storeKey, record);
-      if (this.callback)
+        store.dataSourceDidComplete(storeKey, record);
+      }
+      catch (e)
+      {
+        // Error
+      }
+      
+      /*if (this.callback)
       {
         try 
         {
@@ -201,7 +208,7 @@ Django.DataSource = SC.DataSource.extend({
           console.log(e);
         }
 
-      }
+      }*/
     // error: indicate as such...response == error
     } else store.dataSourceDidError(storeKey, record);
   },
@@ -361,6 +368,9 @@ Django.DataSource = SC.DataSource.extend({
     console.log("appName: "+appName);
     console.log("modelname: "+modelName);
 
+    // Filter conditions
+
+
     var url = "";
     if (query.url)
     {
@@ -370,21 +380,58 @@ Django.DataSource = SC.DataSource.extend({
         //build the conditions from the parameters array
         var limit = 10000; //to do later
         var offset = 0; //to do later
-        var conditions = escape(query.conditions);
+        var conditions = '';
+        if (escape(query.conditions) != 'null')
+          conditions = escape(query.conditions);
         var orderby = escape(query.orderBy);
         if (orderby == null)
         {
         	orderby = 'pk';
         }
-        var parameters = "";
+        var parameters = '';
+        /*if (escape(query.parameters) != 'null')
+          parameters = escape(query.parameters);*/
+        // Find objects
+        var objects = new Array();
         for(var i in query.parameters) {
-            parameters=parameters+"&"+i+"="+query.parameters[i]+"";
+          if (query.parameters[i].isObject)
+          {
+            objects.push(i);
+          } 
         }
-        
+
+        for(var i in query.parameters) {
+          var addPK = false;
+          var doNothing = false;
+          var para = '';
+          var key = '';
+          for (var j = 0; j<objects.length; j++)
+          {
+            if (i == objects[j])
+            {
+              doNothing=true;
+              addPK = true;
+              parameters=parameters+""+objects[j]+"="+query.parameters[i].get('pk')+",";  
+            }
+          }
+          if (!doNothing)
+          {
+            parameters=parameters+""+i+"="+query.parameters[i]+",";  
+          }
+        }
+        parameters = escape(parameters)
+        if (parameters == '' || conditions == '')
+        {
+          url = Django.getSimpleQueryURL.fmt(Django.urlPrefix, appName, modelName, offset, limit, orderby);
+        }
+        else
+        {
+          url = Django.getQueryURL.fmt(Django.urlPrefix, appName, modelName, offset, limit, orderby, conditions, parameters);
+        }
        // parameters = escape(parameters);
-        //url = Django.getQueryURL.fmt(Django.urlPrefix, appName, modelName, offset, limit, orderby, conditions, parameters);
+        
         //url = Django.getQueryURL.fmt(Django.urlPrefix, appName, modelName, offset, limit, orderby)+parameters;
-        url = Django.getQueryURL.fmt(Django.urlPrefix, appName, modelName, orderby)+parameters;
+        //url = Django.getQueryURL.fmt(Django.urlPrefix, appName, modelName, orderby)+parameters;
     } else {
       url = Django.getAllURL.fmt(Django.urlPrefix, appName, modelName) ;
     }
@@ -440,7 +487,7 @@ Django.DataSource = SC.DataSource.extend({
         store.loadQueryResults(query, storeKeys);
       }
       store.dataSourceDidFetchQuery(query);
-		}		
+		}	
 		if (qParams && qParams.successCallback) 
 		{
 			CoreTasks.invokeCallback(qParams.successCallback);

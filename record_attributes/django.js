@@ -306,6 +306,7 @@ SC.RecordAttribute.registerTransform(Django.DecimalField, {
     {
       return num.substr(0,index+decimalPlaces+1);
     }
+    num = cleanupFloat(num, decimalPlaces);
     return (num);
   },
 
@@ -377,6 +378,7 @@ SC.RecordAttribute.registerTransform(Django.DecimalField, {
     {
       return num.substr(0,index+decimalPlaces+1);
     }
+    num = cleanupFloat(num, decimalPlaces);
     return SC.none(num) ? '0.00' : num ;
   }
   
@@ -458,7 +460,7 @@ SC.RecordAttribute.registerTransform(Django.IntegerField, {
     // Check the String!!
     str = String(str);
     str = str.replace(',','.');
-    var str = parseInt(str);
+    var str = parseInt(str,10);
 
     return String(str);
   },
@@ -504,7 +506,7 @@ SC.RecordAttribute.registerTransform(Django.PositiveIntegerField, {
     // Check the String!!
     str = String(str);
     str = str.replace(',','.');
-    var str = parseInt(str);
+    var str = parseInt(str,10);
 
     return String(str);
   },
@@ -524,7 +526,7 @@ SC.RecordAttribute.registerTransform(Django.PositiveSmallIntegerField, {
     // Check the String!!
     str = String(str);
     str = str.replace(',','.');
-    var str = parseInt(str);
+    var str = parseInt(str,10);
 
     return String(str);
   },
@@ -560,7 +562,7 @@ SC.RecordAttribute.registerTransform(Django.SmallIntegerField, {
     // Check the String!!
     str = String(str);
     str = str.replace(',','.');
-    var str = parseInt(str);
+    var str = parseInt(str,10);
 
     return String(str);
   },
@@ -620,8 +622,9 @@ SC.RecordAttribute.registerTransform(Django.TimeField, {
         time ;
     if (d)
     {
-      date = SC.DateTime.create({hour: parseInt(d[1]), minute: parseInt(d[2]), sec: parseInt(d[3])});  
+      date = SC.DateTime.create({hour: parseInt(d[1],10), minute: parseInt(d[2],10), sec: parseInt(d[3],10)});  
     }
+    
     ret = date;
     return ret ;
   },
@@ -653,8 +656,6 @@ SC.RecordAttribute.registerTransform(Django.TimeField, {
       (date.toFormattedString('%M')),
       (date.toFormattedString('%S'))
     );
-    console.log('ret');
-    console.log(ret);
     return ret ;
 
   }
