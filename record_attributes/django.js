@@ -89,7 +89,6 @@ SC.RecordAttribute.registerTransform(Django.DateField, {
     ret.setTime(Number(time));
     
     return ret ;*/
-
     var ret ;
     
     var regexp = "([0-9]{4})-([0-9]{2})-([0-9]{2})?",
@@ -98,7 +97,6 @@ SC.RecordAttribute.registerTransform(Django.DateField, {
         time ;
     var date = SC.DateTime.create({});
     date = SC.DateTime.create({year:d[1], month:d[2], day:d[3]});
-
     /*if (d[3]) { date.setMonth(d[3] - 1); }
     if (d[5]) { date.setDate(d[5]); }
     if (d[7]) { date.setHours(d[7]); }
@@ -306,7 +304,7 @@ SC.RecordAttribute.registerTransform(Django.DecimalField, {
     {
       return num.substr(0,index+decimalPlaces+1);
     }
-    num = cleanupFloat(num, decimalPlaces);
+    //num = cleanupFloat(num, decimalPlaces);
     return (num);
   },
 
@@ -378,7 +376,7 @@ SC.RecordAttribute.registerTransform(Django.DecimalField, {
     {
       return num.substr(0,index+decimalPlaces+1);
     }
-    num = cleanupFloat(num, decimalPlaces);
+    //num = cleanupFloat(num, decimalPlaces);
     return SC.none(num) ? '0.00' : num ;
   }
   

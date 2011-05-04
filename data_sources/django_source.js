@@ -255,16 +255,28 @@ Django.DataSource = SC.DataSource.extend({
         appName = recordTypePath[0],
         modelName = recordTypePath[1];
     var url = Django.deleteURL.fmt(Django.urlPrefix, appName, modelName, recordId);
-
-    SC.Request.deleteUrl(url).set('isJSON', YES)
+    var recordIdString = new String(recordId);
+    // Handle if Object is created in localStore
+    console.log('cr');
+    console.log(recordIdString.indexOf('cr'));
+    if (recordIdString.indexOf('cr') == -1)
+    {
+      SC.Request.deleteUrl(url).set('isJSON', YES)
       .notify(this, this._didDestroyRecord, {
         store: store,
         storeKey: storeKey
-      }).send();
+      }).send();  
+    }
+    else
+    {
+      store.dataSourceDidDestroy(storeKey);
+    }
+
+    
     return YES;
   },
 
-  destroyRecord: function(store, storeKey) {
+  /*destroyRecord: function(store, storeKey) {
     console.log("destroyRecord2");
     var recordType = SC.Store.recordTypeFor(storeKey),
         recordId   = store.idFor(storeKey),
@@ -272,14 +284,21 @@ Django.DataSource = SC.DataSource.extend({
         appName = recordTypePath[0],
         modelName = recordTypePath[1];
     var url = Django.deleteURL.fmt(Django.urlPrefix, appName, modelName, recordId);
-
-    SC.Request.deleteUrl(url).set('isJSON', YES)
-      .notify(this, this._didDestroyRecord, {
-        store: store,
-        storeKey: storeKey
-      }).send();
+    // Handle if Object is created in localStore
+    if (recordId.indexOf('cr') === false)
+    {
+      SC.Request.deleteUrl(url).set('isJSON', YES)
+        .notify(this, this._didDestroyRecord, {
+          store: store,
+          storeKey: storeKey
+        }).send();
+    }
+    else
+    {
+      store.dataSourceDidDestroy(storeKey);
+    }
     return YES;
-  },
+  },*/
 
   _didDestroyRecord: function(request, params) {
     console.log("_didDestroyRecord");
@@ -413,6 +432,14 @@ Django.DataSource = SC.DataSource.extend({
               addPK = true;
               parameters=parameters+""+objects[j]+"="+query.parameters[i].get('pk')+",";  
             }
+          }
+          if (i == 'limit')
+          {
+            limit = query.parameters[i];
+          }
+          if (i == 'offset')
+          {
+            offset = query.parameters[i];
           }
           if (!doNothing)
           {
