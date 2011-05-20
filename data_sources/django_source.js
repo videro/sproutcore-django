@@ -19,13 +19,13 @@ Django.getLengthURL = "/%@/%@/%@/length/" ;
  GET a couple of objects with query parameters / conditions and orderby 
  /<url_prefix>/<app_label>/<model_name>/list/?offset=0&limit=0&ordering=name&conditions=ipPublic%20%3D%20%7Bipp%7D%20AND%20ipUmts%20%3D%20%7Bipu%7D&name=jochen&nr=48455
  */
-Django.getQueryURL = "/%@/%@/%@/list/?offset=%@&limit=%@&ordering=%@&conditions=%@&parameters=%@";
+Django.getQueryURL = "/%@/%@/%@/list/?offset=%@&limit=%@&ordering=%@&conditions=%@&parameters=%@&relations=%@";
 //Django.getQueryURL = "/%@/%@/%@/list/?offset=%@&limit=%@&ordering=%@%@";
 //Django.getQueryURL = "/%@/%@/%@/list/?ordering=%@%@";
 Django.getSimpleQueryURL = "/%@/%@/%@/list/?offset=%@&limit=%@&ordering=%@";
 
 
-Django.getQueryLengthURL = "/%@/%@/%@/length/?conditions=%@&parameters=%@";
+Django.getQueryLengthURL = "/%@/%@/%@/length/?conditions=%@&parameters=%@&relations=%@";
 //Django.getQueryURL = "/%@/%@/%@/list/?offset=%@&limit=%@&ordering=%@%@";
 //Django.getQueryURL = "/%@/%@/%@/list/?ordering=%@%@";
 Django.getSimpleQueryLengthURL = "/%@/%@/%@/length/";
@@ -373,8 +373,8 @@ Django.DataSource = SC.DataSource.extend({
      *   - (SC.Query) scope [R/W]
      *   */
 
-     
-
+    console.log("relations: "+query.relations);
+    console.dir(query.relations);
    /* console.log('queryCallback'+ query.callbackFunction);
     console.log("expandedRecordTypes: "+query.expandedRecordTypes());
     console.log("conditions: "+query.conditions);
@@ -406,22 +406,30 @@ Django.DataSource = SC.DataSource.extend({
       console.log(query.url);
     	url = query.url;
     }
-    else */if(query.orderBy || query.parameters || query.conditions) {
+    else */
+    if(query.orderBy || query.parameters || query.conditions || query.relations) {
         //build the conditions from the parameters array
-        var limit = 10000; //to do later
-        var offset = 0; //to do later
-        var conditions = '';
+        var limit       = 10000; //to do later
+        var offset      = 0; //to do later
+        var conditions  = '';
+        var relations   = '';
+        
         if (escape(query.conditions) != 'null')
-          conditions = escape(query.conditions);
+            conditions = escape(query.conditions);
+
+        if (!SC.empty(query.relations) && !SC.none(query.relations)){
+            relations = escape(SC.json.encode(query.relations))
+        }
+        
         var orderby = escape(query.orderBy);
-        if (orderby == null)
-        {
+        if (orderby == null){
         	orderby = 'pk';
         }
         var parameters = '';
         var parametersLength = '';
         /*if (escape(query.parameters) != 'null')
           parameters = escape(query.parameters);*/
+
         // Find objects
         var objects = new Array();
         for(var i in query.parameters) {
@@ -469,16 +477,17 @@ Django.DataSource = SC.DataSource.extend({
           }
         }
         parameters = escape(parameters)
+        
         if (parameters == '' || conditions == '')
         {
           url = Django.getSimpleQueryURL.fmt(Django.urlPrefix, appName, modelName, offset, limit, orderby);
-          lengthUrl = Django.getSimpleQueryLengthURL.fmt(Django.urlPrefix, appName, modelName) ;
+          lengthUrl = Django.getSimpleQueryLengthURL.fmt(Django.urlPrefix, appName, modelName);
         }
         else
         {
-          url = Django.getQueryURL.fmt(Django.urlPrefix, appName, modelName, offset, limit, orderby, conditions, parameters);
+          url = Django.getQueryURL.fmt(Django.urlPrefix, appName, modelName, offset, limit, orderby, conditions, parameters, relations);
           //lengthUrl = Django.getSimpleQueryLengthURL.fmt(Django.urlPrefix, appName, modelName) ;
-          lengthUrl = Django.getQueryLengthURL.fmt(Django.urlPrefix, appName, modelName, conditions, parameters) ;
+          lengthUrl = Django.getQueryLengthURL.fmt(Django.urlPrefix, appName, modelName, conditions, parameters, relations);
         }
 
         // length: 
